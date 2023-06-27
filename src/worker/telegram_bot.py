@@ -3,7 +3,6 @@ import logging
 import json
 import time
 import requests
-import emoji
 
 
 logging.basicConfig(level=logging.DEBUG)      
@@ -20,6 +19,7 @@ class TelegramBOT(object):
     def compile(self,rf):
          self.msg="\
             Refueling at: " + datetime.now().strftime('%Y-%m-%d  %H:%M') + "\n \
+            Customer: " + rf['memberid'] + "\n \
             Aircraft: " +  rf['aircraft'] + "\n \
             Sort: " + rf['article'] + "\n \
             Amount: " + str(rf['amount'])
