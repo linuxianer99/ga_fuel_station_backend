@@ -7,11 +7,11 @@ from data_storage_db import storage
 logging.basicConfig(level=logging.DEBUG)
 
 # Read configuration
-with open("../config.json", "r") as jsonfile:
-    config = json.load(jsonfile)
-    logging.info("Configuration Read successful: %s", config)
+#with open("../config.json", "r") as jsonfile:
+#    config = json.load(jsonfile)
+#    logging.info("Configuration Read successful: %s", config)
 
-db = storage(config)
+db = storage()
 
 class Refueling(object):
     amount = 0

@@ -2,7 +2,7 @@ services:
 
   db:
     image: mysql:5.7
-    container_name: database
+    container_name: db
     environment:
       MYSQL_ROOT_PASSWORD: my_secret_password
       MYSQL_DATABASE: mlv_fuelstation
@@ -26,18 +26,31 @@ services:
     ports:
       - 8081:80
 
-  #worker:
-  #  user: nobody
-  #  build:
-  #    context: ./src/worker
-  #  command: celery -A tasks worker --loglevel=info
-  #  environment:
-  #    - CELERY_BROKER_URL=redis://redis:6379/0
-  #    - CELERY_RESULT_BACKEND=redis://redis:6379/0
-  #  depends_on:
-  #    - redis
+  worker:
+    user: nobody
+    build:
+      context: ./worker
+    env_file:
+      - config.env
+    command: celery -A tasks worker --loglevel=info
+    depends_on:
+      - redis
 
-      
+  api:
+    container_name: api
+    build:
+      context: ./api
+    command: gunicorn --bind 0.0.0.0:5000 --workers 1 wsgi:app
+    ports:
+     - 5000:5000
+    env_file:
+      - config.env
+    environment:
+      - FLASK_DEBUG=1
+    depends_on:
+      - redis
+      - db
+
   redis:
     container_name: redis
     image: redis

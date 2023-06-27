@@ -3,6 +3,7 @@ from datetime import datetime
 import logging
 import json
 import time
+import os
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -22,7 +23,7 @@ class DB_Refueling(db.Entity):
 
 
 class storage(object):
-    def __init__(self, config):
+    def __init__(self):
         # connect to database
         logging.info("Connecting to database ...")
         retry_count = 0
@@ -30,7 +31,11 @@ class storage(object):
         retry = True
         while retry and retry_count < 20:
             try:
-                result = db.bind(provider='mysql', host=config['database']['server'], user=config['database']['db_user'], passwd=config['database']['db_passwd'], db=config['database']['db'])
+                result = db.bind(provider='mysql', \
+                                host=os.environ.get('DB_SERVER', 'localhost'), \
+                                user=os.environ.get('DB_USER', 'mlv'), \
+                                passwd=os.environ.get('DB_PWD', 'mlv'), \
+                                db=os.environ.get('DB_DATABASE', 'mlv_fuelstation'))
                 result = db.generate_mapping(create_tables=True)
                 retry = False
                 logging.info("Database connection OK")

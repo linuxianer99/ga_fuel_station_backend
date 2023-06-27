@@ -1,5 +1,8 @@
 celery==4.4.7  # due to bug https://github.com/mher/flower/issues/1029
+gunicorn
 Flask
+flask_restful
 redis
-#python-dotenv
+pony
+pymysql
 requests
