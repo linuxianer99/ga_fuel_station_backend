@@ -5,12 +5,6 @@ import json
 import time
 import requests
 
-
-
-import paho.mqtt.client as mqtt
-
-client = mqtt.Client()
-
 logging.basicConfig(level=logging.DEBUG)
     
 class vereinsflieger(object):
@@ -89,26 +83,6 @@ class vereinsflieger(object):
         #    logging.info("Sale successfully added !")
         #else:
         #    logging.error("Add Sale FAILED!\n VF Response: %s", response)
-    
-
-    
-    
-                
-
-
-if __name__ == '__main__':
-    # Read configuration
-    with open("config.json", "r") as jsonfile:
-        config = json.load(jsonfile)
-    logging.info("Configuration Read successful: %s", config)
-
-    #Setup MQTT
-    client.on_connect = on_connect
-    client.on_message = push_to_vf
-    client.on_disconnect = on_disconnect
-
-    # connect to database
-    logging.info("Connecting to database ...")
     
 
    
