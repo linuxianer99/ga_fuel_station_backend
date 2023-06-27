@@ -1,0 +1,48 @@
+services:
+
+  db:
+    image: mysql:5.7
+    container_name: database
+    environment:
+      MYSQL_ROOT_PASSWORD: my_secret_password
+      MYSQL_DATABASE: mlv_fuelstation
+      MYSQL_USER: mlv
+      MYSQL_PASSWORD: mlv
+    volumes:
+      - ./dbdata:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: pma
+    links:
+      - db
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_ARBITRARY: 1
+    ports:
+      - 8081:80
+
+  #worker:
+  #  user: nobody
+  #  build:
+  #    context: ./src/worker
+  #  command: celery -A tasks worker --loglevel=info
+  #  environment:
+  #    - CELERY_BROKER_URL=redis://redis:6379/0
+  #    - CELERY_RESULT_BACKEND=redis://redis:6379/0
+  #  depends_on:
+  #    - redis
+
+      
+  redis:
+    container_name: redis
+    image: redis
+    ports:
+      - 6379:6379
+
+volumes:
+  dbdata: ~

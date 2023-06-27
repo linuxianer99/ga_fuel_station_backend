@@ -1,0 +1,36 @@
+{
+    "database":
+    {
+        "enable": 1,
+        "server": "192.168.1.40",
+        "db": "mlv_fuelstation",
+        "db_user": "<user>",
+        "db_passwd": "<password>",
+        "db_table": "mlv_fuelstation"
+    },
+
+    "article":
+    {
+        "fuel":["AVGAS-100LL", "AVGAS-UL91", "MOGAS"]
+    },
+
+    "vf":
+    {
+        "enable": 0,
+        "url":"www.vereinsflieger.de",
+        "user": "<vf_user>",
+        "pwd_md5": "<md5 pwd>",
+        "appkey": "<appkey>"
+    },
+
+    "telegram":
+    {
+        "api_key": "<apikey>",
+        "user_id": "<user id>"
+    },
+
+    "api":
+    {
+        "terminal_key": "<secret key>"
+    }
+}
