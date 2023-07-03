@@ -75,17 +75,44 @@ class vereinsflieger(object):
             'accesstoken': self.accesstoken,
              }
         
-        logging.info('Add Sale: %s', params)
+        logging.info('Get members')
         response=requests.post("https://" + self.url + "/interface/rest/user/list", params=params, headers=headers, data=payload).json()
-        logging.debug("Respone: %s", response)
+        logging.info("Respone: %s", response)
         
         #if response['httpstatuscode'] is '200':
         #    logging.info("Sale successfully added !")
         #else:
         #    logging.error("Add Sale FAILED!\n VF Response: %s", response)
     
+    def get_properties_from_id(self, id):
+        payload={}
+        headers = {}
+        params = {
+            'accesstoken': self.accesstoken,
+             }
+        
+        logging.info('Get properties from ID')
+        response=requests.post("https://" + self.url + "/interface/rest/user/list", params=params, headers=headers, data=payload)
+        
+        logging.debug("Respone: %s", response)
+        
+        data = response.json()
+        props = {}
+        for key in data.keys():
+            try: 
+                if data[key]['memberid'] == str(id):
+                    logging.debug("Member match!")
+                    member_record = data[key]
+                    for key, value in member_record.items():
+                        if key.startswith('prop'):
+                            props[value['name']]=value['value']
 
-   
+                    break
+            except:
+                logging.info("Member not found!")
+                return None
+        logging.debug("Properties: %s", props)
+        return props
         
  
 

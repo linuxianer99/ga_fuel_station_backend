@@ -16,10 +16,44 @@ app = Flask(__name__)
 
 logging.basicConfig(level=logging.DEBUG)
 
-# Read configuration
-#with open("../config.json", "r") as jsonfile:
-#    config = json.load(jsonfile)
-#    logging.info("Configuration Read successful: %s", config)
+@app.route('/terminal/<terminal_id>/ping', methods=['GET'])
+def terminal_ping(terminal_id):
+    logging.info("Ping from %s", terminal_id)
+    return "PONG"
+
+@app.route('/terminal/<terminal_id>', methods=['POST'])
+def terminal_refueling(terminal_id):
+    data = request.get_json()
+    logging.info(data)
+    if verify_data(data):
+        rf = Refueling(data)
+        rf.set_terminal_id(terminal_id)
+        # Write to database 
+        db_id = rf.store()
+        #task = celery.send_task('tasks.addsale', args=[rf.get()], kwargs={})
+        #task = celery.send_task('tasks.tg_sendmessage', args=[rf.get()], kwargs={})
+        task = celery.send_task('tasks.vf_sendrecipe', args=[rf.get()], kwargs={})
+
+        return "Success", 200
+    else:
+        return "Wrong AuthCode", 403    
+        
+        
+       
+
+def verify_data(data):
+    secret_key = str.encode(os.environ.get('TERMINAL_KEY', ''))
+    message = data['aircraft']+data['memberid']+str(data['amount'])+data['article']
+    hmac_value = hmac.new(secret_key, message.encode("utf-8"), hashlib.sha256)
+    digest = hmac_value.digest()
+    calculated_hash = base64.b64encode(digest).decode()
+    if (calculated_hash.strip()==data['auth']):
+        logging.info("API auth OK")
+        return True
+    else:
+        logging.info("API auth FAIL")
+        return False
+
 
 #parser = reqparse.RequestParser()
 #parser.add_argument('amount')
@@ -62,36 +96,3 @@ logging.basicConfig(level=logging.DEBUG)
     #    ret = g.client.publish(g.config['mqtt']['printer_topic'], rf.asJsonStr())
 
  #   return  render_template('recipe.html', aircraft=args['aircraft'], sort=args['sort'], amount=args['amount'])
-
-
-@app.route('/terminal/<terminal_id>', methods=['POST'])
-def terminal_refueling(terminal_id):
-    data = request.get_json()
-    logging.info(data)
-    if verify_data(data):
-        rf = Refueling(data)
-        rf.set_terminal_id(terminal_id)
-        # Write to database 
-        db_id = rf.store()
-        task = celery.send_task('tasks.addsale', args=[rf.get()], kwargs={})
-        task = celery.send_task('tasks.sendmessage', args=[rf.get()], kwargs={})
-        return ("200")
-    else:
-        return ("500")    
-        
-        
-       
-
-def verify_data(data):
-    secret_key = str.encode(os.environ.get('TERMINAL_KEY', '111111111'))
-    message = data['aircraft']+data['memberid']+str(data['amount'])+data['article']
-    hmac_value = hmac.new(secret_key, message.encode("utf-8"), hashlib.sha256)
-    digest = hmac_value.digest()
-    calculated_hash = base64.b64encode(digest).decode()
-    
-    if (calculated_hash.strip()==data['auth']):
-        logging.info("API auth OK")
-        return True
-    else:
-        logging.info("API auth FAIL")
-        return False
