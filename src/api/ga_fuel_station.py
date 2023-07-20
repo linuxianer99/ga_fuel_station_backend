@@ -1,6 +1,7 @@
-from flask import g, Flask, request, render_template
+from flask import g, Flask, request, render_template, Response
 from flask_restful import Resource, reqparse
 import time
+from datetime import datetime
 import logging
 import os
 import json
@@ -10,7 +11,23 @@ import hmac
 import base64
 from Refueling import Refueling
 
+from prometheus_client import multiprocess
+from prometheus_client import generate_latest, CollectorRegistry, CONTENT_TYPE_LATEST, Gauge, Info, Counter, Histogram
+
 from worker import celery
+
+terminals = ['terminal']
+
+REFUELINGS = Counter('refuelings', 'How much refuelings happen')
+LASTPINGDELAY = Gauge('terminal_last_ping', 'Delay between pings', labelnames=terminals)
+WRONGAUTH = Counter('wrong_auth', 'Counter of wrong authcode')
+
+
+
+i = Info('GA_Fuelstation', 'Name of Software')
+i.info({'version': '1.0.0', 'buildhost': 'foo@bar'})
+
+terminal_inventory = {}
 
 app = Flask(__name__)
 
@@ -19,6 +36,20 @@ logging.basicConfig(level=logging.DEBUG)
 @app.route('/terminal/<terminal_id>/ping', methods=['GET'])
 def terminal_ping(terminal_id):
     logging.info("Ping from %s", terminal_id)
+    if terminal_id not in terminals:
+        terminals.append(terminal_id)
+    if terminal_id not in terminal_inventory:
+        terminal_properties={'last_seen': time.time(), 'delta': 0}
+        logging.info("Terminal %s seen the first time", terminal_id)
+        terminal_inventory[terminal_id]=terminal_properties
+    else:
+        logging.info("Terminal %s seen again", terminal_id)
+        delta = time.time()-terminal_inventory[terminal_id]['last_seen']
+        terminal_properties={'last_seen': time.time(), 'delta': delta}
+        terminal_inventory.update({terminal_id: terminal_properties})
+
+    LASTPINGDELAY.labels(terminal_id).set(terminal_properties['delta'])
+    logging.info(terminal_inventory)
     return "PONG"
 
 @app.route('/terminal/<terminal_id>', methods=['POST'])
@@ -30,16 +61,23 @@ def terminal_refueling(terminal_id):
         rf.set_terminal_id(terminal_id)
         # Write to database 
         db_id = rf.store()
-        #task = celery.send_task('tasks.addsale', args=[rf.get()], kwargs={})
-        #task = celery.send_task('tasks.tg_sendmessage', args=[rf.get()], kwargs={})
+        task = celery.send_task('tasks.addsale', args=[rf.get()], kwargs={})
+        task = celery.send_task('tasks.tg_sendmessage', args=[rf.get()], kwargs={})
         task = celery.send_task('tasks.vf_sendrecipe', args=[rf.get()], kwargs={})
+        REFUELINGS.inc()
 
         return "Success", 200
     else:
+        WRONGAUTH.inc()
         return "Wrong AuthCode", 403    
         
         
-       
+@app.route("/metrics")
+def metrics():
+    registry = CollectorRegistry()
+    multiprocess.MultiProcessCollector(registry)
+    data = generate_latest(registry)
+    return Response(data, mimetype=CONTENT_TYPE_LATEST)       
 
 def verify_data(data):
     secret_key = str.encode(os.environ.get('TERMINAL_KEY', ''))

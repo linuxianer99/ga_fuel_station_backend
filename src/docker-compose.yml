@@ -40,7 +40,7 @@ services:
     container_name: api
     build:
       context: ./api
-    command: gunicorn --bind 0.0.0.0:5000 --workers 1 wsgi:app
+    command: gunicorn -c gunicorn_conf.py --bind 0.0.0.0:5000 --workers 1 wsgi:app
     ports:
      - 5000:5000
     env_file:
@@ -57,5 +57,54 @@ services:
     ports:
       - 6379:6379
 
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - 9090:9090
+    depends_on:
+      - redis
+      - api
+      - db 
+
+  grafana:
+    image: grafana/grafana
+    user: "472"
+    depends_on:
+      - prometheus
+    ports:
+      - 3000:3000
+    volumes:
+      - grafana_data:/var/lib/grafana
+    env_file:
+      - ./grafana/config.monitoring
+
+  alertmanager:
+    container_name: alertmanager
+    image: prom/alertmanager
+    ports:
+      - 9093:9093
+    volumes:
+      - ./alertmanager/:/etc/alertmanager/
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+  
+  cadvisor:
+    container_name: cadvisor
+    image: gcr.io/cadvisor/cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    ports:
+      - 8080:8080
+
 volumes:
   dbdata: ~
+  prometheus_data: {}
+  grafana_data: {}
