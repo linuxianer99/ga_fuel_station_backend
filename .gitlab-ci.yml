@@ -1,1 +1,8 @@
-include: src/api/build.yml
+build-job:
+    stage: build
+    script:
+         -|
+            cd "$CI_PROJECT_DIR/src/api"
+            docker build .
+            cd "$CI_PROJECT_DIR/src/worker"
+            docker build .
