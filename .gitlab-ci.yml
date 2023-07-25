@@ -1,5 +1,7 @@
 build-job:
     stage: build
+    tags:
+    - docker
     script:
          -|
             cd "$CI_PROJECT_DIR/src/api"
