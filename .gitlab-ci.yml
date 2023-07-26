@@ -7,13 +7,13 @@ default:
 
 build:
     stage: build
+    parallel:
+        matrix:
+            - COMPONENT: [api]
     before_script:
         - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
     # Default branch leaves tag empty (= latest tag)
     # All other branches are tagged with the escaped branch name (commit ref slug)
     script:
-         -|
-            cd "$CI_PROJECT_DIR/src/api"
-            docker build .
-            cd "$CI_PROJECT_DIR/src/worker"
-            docker build .
+         - cd "$CI_PROJECT_DIR/src/$COMPONENT"
+         - docker build .
