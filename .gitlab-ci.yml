@@ -1,10 +1,12 @@
-build-job:
-    stage: build
-    tags:
-    - docker
-    image: docker:latest
+default:
+    image: docker:20.10.16
     services:
-        - docker:dind
+        - docker:20.10.16-dind
+    before_script:
+        - docker info
+
+build:
+    stage: build
     before_script:
         - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
     # Default branch leaves tag empty (= latest tag)
