@@ -21,23 +21,4 @@ build:
     script:
          - cd "$CI_PROJECT_DIR/src/$COMPONENT"
          - docker build -t $IMAGE_TAG_TEST .
-         - docker push $IMAGE_TAG_TEST
-    except:
-        - tags 
-
-release-image:
-    stage: build
-    parallel:
-        matrix:
-            - COMPONENT: [api, worker]
-    
-    before_script:
-        - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-    # Default branch leaves tag empty (= latest tag)
-    # All other branches are tagged with the escaped branch name (commit ref slug)
-    script:
-         - cd "$CI_PROJECT_DIR/src/$COMPONENT"
-         - docker build -t $IMAGE_TAG_RELEASE .
-         - docker push $IMAGE_TAG_RELEASE
-    only:
-        - tags
+         - docker push $IMAGE_TAG_TEST 
