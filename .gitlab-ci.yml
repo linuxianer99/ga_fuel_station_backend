@@ -10,10 +10,13 @@ build:
     parallel:
         matrix:
             - COMPONENT: [api, worker]
+    variables:
+        IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
     before_script:
         - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
     # Default branch leaves tag empty (= latest tag)
     # All other branches are tagged with the escaped branch name (commit ref slug)
     script:
          - cd "$CI_PROJECT_DIR/src/$COMPONENT"
-         - docker build .
+         - docker build -t $IMAGE_TAG .
+         - docker push $IMAGE_TAG
