@@ -9,7 +9,7 @@ build:
     stage: build
     parallel:
         matrix:
-            - COMPONENT: [api]
+            - COMPONENT: [api, worker]
     before_script:
         - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
     # Default branch leaves tag empty (= latest tag)
