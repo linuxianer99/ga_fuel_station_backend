@@ -20,5 +20,5 @@ build:
     # All other branches are tagged with the escaped branch name (commit ref slug)
     script:
          - cd "$CI_PROJECT_DIR/src/$COMPONENT"
-         - docker build -t $IMAGE_TAG_TEST .
-         - docker push $IMAGE_TAG_TEST 
+         - docker build -t $IMAGE_TAG_TEST-$COMPONENT .
+         - docker push $IMAGE_TAG_TEST-$COMPONENT 
