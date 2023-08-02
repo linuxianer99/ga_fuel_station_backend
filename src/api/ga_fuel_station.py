@@ -61,9 +61,9 @@ def terminal_refueling(terminal_id):
         rf.set_terminal_id(terminal_id)
         # Write to database 
         db_id = rf.store()
-        task = celery.send_task('tasks.addsale', args=[rf.get()], kwargs={})
+        task = celery.send_task('tasks.vf_addsale', args=[rf.get()], kwargs={})
         task = celery.send_task('tasks.tg_sendmessage', args=[rf.get()], kwargs={})
-        task = celery.send_task('tasks.vf_sendrecipe', args=[rf.get()], kwargs={})
+        task = celery.send_task('tasks.vf_recipe', args=[rf.get()], kwargs={})
         REFUELINGS.inc()
 
         return "Success", 200
@@ -71,7 +71,11 @@ def terminal_refueling(terminal_id):
         WRONGAUTH.inc()
         return "Wrong AuthCode", 403    
         
-        
+
+@app.route("/version", methods=['GET'])
+def version():
+    return "V1.0", 200
+
 @app.route("/metrics")
 def metrics():
     registry = CollectorRegistry()
