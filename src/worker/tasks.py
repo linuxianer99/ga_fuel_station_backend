@@ -38,13 +38,21 @@ vf=vereinsflieger(os.environ.get('VF_URL', 'www.vereinsflieger.de'))
 # Telegram
 tg=TelegramBOT(os.environ.get('TG_APIKEY', ''), os.environ.get('TG_USERID', '')) 
 
+# Define logger
+formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(message)s')
+#file_handler = logging.FileHandler('logs.log')
+#file_handler.setLevel(logging.DEBUG)
+#file_handler.setFormatter(formatter)
+#logger = logging.getLogger()
+#logger.addHandler(file_handler)
+
 # Remote Printers
 Printers = []
 # Parse config for printers
 for key, value in os.environ.items():
     if key.startswith("PRINTER_NAME_"):
         logger.info('[RemotePrinter] add: ' + value)
-        Printers.append(RemotePrinter(value))
+        Printers.append(RemotePrinter(value, value + '.j2'))
 
 # Setup Celery
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379'),
@@ -52,9 +60,15 @@ CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localho
 
 celery = Celery('tasks', broker=CELERY_BROKER_URL, backend=CELERY_RESULT_BACKEND)
 
+@celery.task(name='tasks.log')
+#Write to log
+def log(lm):
+    print(lm)
+    #logger.info(lm['terminal_id'] + ':' + lm['message'])
+
 @celery.task(name='tasks.vf_addsale')
 # Create Sale in VF
-def vf_addsale(rf):
+def addsale(rf):
     if os.environ.get('VF_ENABLE', '0'):
         logger.info('[task] addsale:' + str(rf))
         vf.signin(os.environ.get('VF_USER', ''), os.environ.get('VF_PWD', ''), os.environ.get('VF_APPKEY', ''))

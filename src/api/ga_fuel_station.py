@@ -12,7 +12,7 @@ import base64
 from Refueling import Refueling
 
 from prometheus_client import multiprocess
-from prometheus_client import generate_latest, CollectorRegistry, CONTENT_TYPE_LATEST, Gauge, Info, Counter, Histogram
+from prometheus_client import generate_latest, CollectorRegistry, CONTENT_TYPE_LATEST, Gauge, Info, Counter
 
 from worker import celery
 
@@ -21,8 +21,9 @@ terminals = ['terminal']
 REFUELINGS = Counter('refuelings', 'How much refuelings happen')
 LASTPINGDELAY = Gauge('terminal_last_ping', 'Delay between pings', labelnames=terminals)
 WRONGAUTH = Counter('wrong_auth', 'Counter of wrong authcode')
-
-
+FREEHEAP = Gauge('freeheap', 'Free Heap Memory', labelnames=terminals)
+REBOOTREASON = Gauge('rebootreason', 'Reason for last reboot', labelnames=terminals)
+IP = Info('IP', 'Current IP of Terminal')
 
 i = Info('GA_Fuelstation', 'Name of Software')
 i.info({'version': '1.0.0', 'buildhost': 'foo@bar'})
@@ -51,6 +52,37 @@ def terminal_ping(terminal_id):
     LASTPINGDELAY.labels(terminal_id).set(terminal_properties['delta'])
     logging.info(terminal_inventory)
     return "PONG"
+
+@app.route('/terminal/<terminal_id>/status', methods=['POST'])
+def terminal_status(terminal_id):
+    logging.info("Status from %s", terminal_id)
+    data = request.get_json()
+    logging.info(data)
+    
+    lm = {}
+    lm['terminal_id'] = terminal_id
+    lm['message'] = data
+    task = celery.send_task('tasks.log', args=[lm], kwargs={})
+
+    if terminal_id not in terminals:
+        terminals.append(terminal_id)
+    if terminal_id not in terminal_inventory:
+        terminal_properties={'last_seen': time.time(), 'delta': 0}
+        logging.info("Terminal %s seen the first time", terminal_id)
+        terminal_inventory[terminal_id]=terminal_properties
+    else:
+        logging.info("Terminal %s seen again", terminal_id)
+        delta = time.time()-terminal_inventory[terminal_id]['last_seen']
+        terminal_properties={'last_seen': time.time(), 'delta': delta}
+        terminal_inventory.update({terminal_id: terminal_properties})
+
+    LASTPINGDELAY.labels(terminal_id).set(terminal_properties['delta'])
+    FREEHEAP.labels(terminal_id).set(data['freeheap'])
+    IP.info({'Terminal': terminal_id, 'IP:': data['ip']})
+    if "reboot_reason" in data:
+        REBOOTREASON.labels(terminal_id).set(data['reboot_reason'])
+		
+    return "Success", 200
 
 @app.route('/terminal/<terminal_id>', methods=['POST'])
 def terminal_refueling(terminal_id):
