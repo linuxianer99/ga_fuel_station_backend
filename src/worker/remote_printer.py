@@ -42,9 +42,11 @@ class RemotePrinter(object):
 
     id = ""
     last_seen = 0
+    recipe_template = ""
 
-    def __init__(self, printer_id):
-        self.id = printer_id        
+    def __init__(self, printer_id, recipe_template):
+        self.id = printer_id
+        self.recipe_template = recipe_template
 
     def heartbeat(self):
         last_seen = time.time()
@@ -56,7 +58,7 @@ class RemotePrinter(object):
         # Topic: /printer/<printer_id>/job         => server send jobs to printer
 
         # Compose recipe
-        with open('recipe.j2') as f:
+        with open(self.recipe_template) as f:
             recipe_content = Template(f.read()).render(
                 date=datetime.today().strftime('%Y-%m-%d'),
                 time=datetime.today().strftime('%H:%M'),
