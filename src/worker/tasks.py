@@ -69,7 +69,7 @@ def log(lm):
 @celery.task(name='tasks.vf_addsale')
 # Create Sale in VF
 def addsale(rf):
-    if os.environ.get('VF_ENABLE', '0'):
+    if int(os.environ.get('VF_ENABLE', '1')) == 1:
         logger.info('[task] addsale:' + str(rf))
         vf.signin(os.environ.get('VF_USER', ''), os.environ.get('VF_PWD', ''), os.environ.get('VF_APPKEY', ''))
         vf.add_sale(rf)
@@ -80,12 +80,13 @@ def addsale(rf):
 @celery.task(name='tasks.tg_sendmessage')
 # Send message to telegram
 def tg_sendmessage(rf):
-    tg.compile(rf)
-    tg.send()
+    if int(os.environ.get('TG_ENABLE', '1')) == '1':
+        tg.compile(rf)
+        tg.send()
 
 @celery.task(name='tasks.vf_recipe')
 def vf_recipe(rf):
-    if os.environ.get('VF_ENABLE', '1') == '1':
+    if int(os.environ.get('VF_ENABLE', '0')) == '1':
         logger.info('[task] send recipe to user:' + str(rf))
         vf.signin(os.environ.get('VF_USER', ''), os.environ.get('VF_PWD', ''), os.environ.get('VF_APPKEY', ''))
         props = vf.get_properties_from_id(rf['memberid'])
