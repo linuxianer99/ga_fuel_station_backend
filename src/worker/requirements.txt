@@ -5,3 +5,4 @@ requests
 paho-mqtt
 oneprint
 escpos
+Pillow
