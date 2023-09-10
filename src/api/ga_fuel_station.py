@@ -116,7 +116,7 @@ def metrics():
     return Response(data, mimetype=CONTENT_TYPE_LATEST)       
 
 def verify_data(data):
-    secret_key = str.encode(os.environ.get('TERMINAL_KEY', ''))
+    secret_key = base64.b64decode((os.environ.get('TERMINAL_KEY', '')))
     message = data['aircraft']+data['memberid']+str(data['amount'])+data['article']
     hmac_value = hmac.new(secret_key, message.encode("utf-8"), hashlib.sha256)
     digest = hmac_value.digest()
