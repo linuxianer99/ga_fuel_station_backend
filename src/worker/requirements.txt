@@ -3,6 +3,8 @@ Flask
 redis
 requests
 paho-mqtt
+qrcode 
+pillow
+pystrich
+python-escpos
 oneprint
-escpos
-Pillow
