@@ -12,7 +12,7 @@ import base64
 from Refueling import Refueling
 
 from prometheus_client import multiprocess
-from prometheus_client import generate_latest, CollectorRegistry, CONTENT_TYPE_LATEST, Gauge, Info, Counter
+from prometheus_client import generate_latest, CollectorRegistry, CONTENT_TYPE_LATEST, Gauge, Info, Counter, Enum
 
 from worker import celery
 
@@ -24,6 +24,8 @@ WRONGAUTH = Counter('wrong_auth', 'Counter of wrong authcode')
 FREEHEAP = Gauge('freeheap', 'Free Heap Memory', labelnames=terminals)
 REBOOTREASON = Gauge('rebootreason', 'Reason for last reboot', labelnames=terminals)
 IP = Info('IP', 'Current IP of Terminal')
+STATUS = Enum('terminal_state', 'state of the terminal', 
+              states=['normal', 'connection_error', 'blocked'], labelnames=terminals)
 
 i = Info('GA_Fuelstation', 'Name of Software')
 i.info({'version': '1.0.0', 'buildhost': 'foo@bar'})
@@ -81,21 +83,35 @@ def terminal_status(terminal_id):
     IP.info({'Terminal': terminal_id, 'IP:': data['ip']})
     if "reboot_reason" in data:
         REBOOTREASON.labels(terminal_id).set(data['reboot_reason'])
-		
+    
+    if data['status'] == 0:
+        STATUS.labels(terminal_id).state('normal')
+    if data['status'] == 1:
+        STATUS.labels(terminal_id).state('connection_error')
+    if data['status'] == 2:
+        STATUS.labels(terminal_id).state('blocked')
+
     return "Success", 200
 
 @app.route('/terminal/<terminal_id>', methods=['POST'])
 def terminal_refueling(terminal_id):
     data = request.get_json()
-    logging.info(data)
+    logging.debug(data)
     if verify_data(data):
         rf = Refueling(data)
         rf.set_terminal_id(terminal_id)
         # Write to database 
         db_id = rf.store()
-        task = celery.send_task('tasks.vf_addsale', args=[rf.get()], kwargs={})
-        task = celery.send_task('tasks.tg_sendmessage', args=[rf.get()], kwargs={})
-        task = celery.send_task('tasks.vf_recipe', args=[rf.get()], kwargs={})
+        # Trigger further tasks if refueling is above limit
+        booking_threshold = float(os.environ.get('BOOKING_THRESHOLD', '0.0'))
+        if float(rf.get()['amount']) > booking_threshold:
+            task = celery.send_task('tasks.vf_addsale', args=[rf.get()], kwargs={})
+            task = celery.send_task('tasks.tg_sendmessage', args=[rf.get()], kwargs={})
+            task = celery.send_task('tasks.vf_recipe', args=[rf.get()], kwargs={})
+        else:
+            logging.info("Amount below booking threshold => no booking done!")
+
+        # Handle prometheus
         REFUELINGS.inc()
 
         return "Success", 200
