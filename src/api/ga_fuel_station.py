@@ -34,7 +34,10 @@ terminal_inventory = {}
 
 app = Flask(__name__)
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(
+    format='%(asctime)s %(levelname)-8s %(message)s',
+    level=logging.DEBUG,
+    datefmt='%Y-%m-%d %H:%M:%S')
 
 @app.route('/terminal/<terminal_id>/ping', methods=['GET'])
 def terminal_ping(terminal_id):

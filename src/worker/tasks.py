@@ -18,8 +18,11 @@ from telegram_bot import TelegramBOT
 from remote_printer import RemotePrinter
 from remote_printer import handlePrinter
 
+logging.basicConfig(
+    format='%(asctime)s %(levelname)-8s %(message)s',
+    level=logging.DEBUG,
+    datefmt='%Y-%m-%d %H:%M:%S')
 
-logging.basicConfig(level=logging.DEBUG)
 logger = get_task_logger(__name__)
 
 env=os.environ
