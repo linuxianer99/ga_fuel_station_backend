@@ -24,8 +24,9 @@ WRONGAUTH = Counter('wrong_auth', 'Counter of wrong authcode')
 FREEHEAP = Gauge('freeheap', 'Free Heap Memory', labelnames=terminals)
 REBOOTREASON = Gauge('rebootreason', 'Reason for last reboot', labelnames=terminals)
 IP = Info('IP', 'Current IP of Terminal')
-STATUS = Enum('terminal_state', 'state of the terminal', 
-              states=['normal', 'connection_error', 'blocked'], labelnames=terminals)
+#STATUS = Enum('terminal_state', 'state of the terminal', 
+#              states=['normal', 'connection_error', 'blocked'], labelnames=terminals)
+STATUS = Gauge('terminal_status', 'Current terminal status', labelnames=terminals)
 
 i = Info('GA_Fuelstation', 'Name of Software')
 i.info({'version': '1.0.0', 'buildhost': 'foo@bar'})
@@ -87,12 +88,13 @@ def terminal_status(terminal_id):
     if "reboot_reason" in data:
         REBOOTREASON.labels(terminal_id).set(data['reboot_reason'])
     
-    if data['status'] == 0:
-        STATUS.labels(terminal_id).state('normal')
-    if data['status'] == 1:
-        STATUS.labels(terminal_id).state('connection_error')
-    if data['status'] == 2:
-        STATUS.labels(terminal_id).state('blocked')
+    STATUS.labels(terminal_id).set(data['status'])
+    #if data['status'] == 0:
+    #    STATUS.labels(terminal_id).state('normal')
+    #if data['status'] == 1:
+    #    STATUS.labels(terminal_id).state('connection_error')
+    #if data['status'] == 2:
+    #    STATUS.labels(terminal_id).state('blocked')
 
     return "Success", 200
 
