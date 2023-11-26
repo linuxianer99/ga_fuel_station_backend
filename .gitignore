@@ -1,3 +1,5 @@
 __pycache__
 dbdata
 config.json
+**/env.sh
+**/config.env
