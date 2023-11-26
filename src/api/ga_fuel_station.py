@@ -1,20 +1,26 @@
 from flask import g, Flask, request, render_template, Response
-from flask_restful import Resource, reqparse
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
+#from flask_restful import Resource, reqparse
 import time
-from datetime import datetime
+#from datetime import datetime
 import logging
 import os
-import json
-import ssl
+#import json
+#import ssl
 import hashlib
 import hmac
 import base64
 from Refueling import Refueling
 
-from prometheus_client import multiprocess
+from prometheus_client import multiprocess, make_wsgi_app
 from prometheus_client import generate_latest, CollectorRegistry, CONTENT_TYPE_LATEST, Gauge, Info, Counter, Enum
 
 from worker import celery
+
+app = Flask(__name__)
+app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {
+    '/metrics': make_wsgi_app()
+})
 
 terminals = ['terminal']
 
@@ -33,8 +39,6 @@ i = Info('GA_Fuelstation', 'Name of Software')
 i.info({'version': '1.0.0', 'buildhost': 'foo@bar'})
 
 terminal_inventory = {}
-
-app = Flask(__name__)
 
 logging.basicConfig(
     format='%(asctime)s %(levelname)-8s %(message)s',
@@ -85,7 +89,7 @@ def terminal_status(terminal_id):
 
     LASTPINGDELAY.labels(terminal_id).set(terminal_properties['delta'])
     FREEHEAP.labels(terminal_id).set(data['freeheap'])
-    IP.info({'Terminal': terminal_id, 'IP:': data['ip']})
+    IP.info({'Terminal': terminal_id, 'IP': data['ip']})
     if "reboot_reason" in data:
         REBOOTREASON.labels(terminal_id).set(data['reboot_reason'])
     
@@ -132,12 +136,12 @@ def terminal_refueling(terminal_id):
 def version():
     return "V1.0", 200
 
-@app.route("/metrics")
-def metrics():
-    registry = CollectorRegistry()
-    multiprocess.MultiProcessCollector(registry)
-    data = generate_latest(registry)
-    return Response(data, mimetype=CONTENT_TYPE_LATEST)       
+#@app.route("/metrics")
+#def metrics():
+#    registry = CollectorRegistry()
+#    multiprocess.MultiProcessCollector(registry)
+#    data = generate_latest(registry)
+#    return Response(data, mimetype=CONTENT_TYPE_LATEST)       
 
 def verify_data(data):
     secret_key = base64.b64decode((os.environ.get('TERMINAL_KEY', '')))
