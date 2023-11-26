@@ -27,6 +27,7 @@ IP = Info('IP', 'Current IP of Terminal')
 #STATUS = Enum('terminal_state', 'state of the terminal', 
 #              states=['normal', 'connection_error', 'blocked'], labelnames=terminals)
 STATUS = Gauge('terminal_status', 'Current terminal status', labelnames=terminals)
+TIMESTAMP = Gauge('timestamp', 'Time of last status message as UNIX-Timestamp', labelnames=terminals)
 
 i = Info('GA_Fuelstation', 'Name of Software')
 i.info({'version': '1.0.0', 'buildhost': 'foo@bar'})
@@ -95,6 +96,8 @@ def terminal_status(terminal_id):
     #    STATUS.labels(terminal_id).state('connection_error')
     #if data['status'] == 2:
     #    STATUS.labels(terminal_id).state('blocked')
+
+    TIMESTAMP.labels(terminal_id).set(int(time.time()))
 
     return "Success", 200
 
