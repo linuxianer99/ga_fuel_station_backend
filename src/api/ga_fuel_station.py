@@ -33,10 +33,8 @@ IP = Info('IP', 'Current IP of Terminal')
 #STATUS = Enum('terminal_state', 'state of the terminal', 
 #              states=['normal', 'connection_error', 'blocked'], labelnames=terminals)
 STATUS = Gauge('terminal_status', 'Current terminal status', labelnames=terminals)
+RSSI = Gauge('wifi_rssi', 'Current RSSI of WIFI signal', labelnames=terminals)
 TIMESTAMP = Gauge('terminal_status_timestamp', 'Time of last status message as UNIX-Timestamp', labelnames=terminals)
-
-i = Info('GA_Fuelstation', 'Name of Software')
-i.info({'version': '1.0.0', 'buildhost': 'foo@bar'})
 
 terminal_inventory = {}
 
@@ -94,12 +92,9 @@ def terminal_status(terminal_id):
         REBOOTREASON.labels(terminal_id).set(data['reboot_reason'])
     
     STATUS.labels(terminal_id).set(data['status'])
-    #if data['status'] == 0:
-    #    STATUS.labels(terminal_id).state('normal')
-    #if data['status'] == 1:
-    #    STATUS.labels(terminal_id).state('connection_error')
-    #if data['status'] == 2:
-    #    STATUS.labels(terminal_id).state('blocked')
+
+    if "rssi" in data:
+        RSSI.labels(terminal_id).set(data['rssi'])
 
     TIMESTAMP.labels(terminal_id).set(int(time.time()))
 
