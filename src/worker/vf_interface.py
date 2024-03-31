@@ -43,7 +43,7 @@ class vereinsflieger(object):
             "accesstoken=" + self.accesstoken
         response = requests.request("DELETE", url, headers=headers, data=payload)
         #respone=requests.post("https://" + self.url + "/interface/rest/auth/singin", params=params, headers=headers, data=payload)
-        logging.debug("Respone: %s", response.json())
+        logging.debug("Respone: %s", response)
 
     def add_sale(self, rf):
         logging.info('Enter Add Sale: %s', rf)
