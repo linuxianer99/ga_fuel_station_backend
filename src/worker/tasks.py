@@ -112,7 +112,7 @@ def vf_recipe(rf):
                 # Compose message
                 with open('email.j2') as f:
                     message = Template(f.read()).render(
-                        date=datetime.now().strftime("%d-%m-%Y, %H:%M:%S"),
+                        date=rf['date'],
                         aircraft=rf['aircraft'],
                         amount=rf['amount'],
                         article=rf['article']

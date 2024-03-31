@@ -1,5 +1,5 @@
 from pony.orm import *
-from datetime import datetime
+import datetime
 import logging
 import json
 import time
@@ -17,9 +17,10 @@ class DB_Refueling(db.Entity):
     amount = Required(float)
     totalizer = Optional(float)
     terminal_id = Required(str)
-    create = Required(datetime, default=lambda: datetime.now())
-    vf = Optional(datetime)
-    msg = Optional(datetime)
+    date = Required(datetime.date)
+    create = Required(datetime.datetime, default=lambda: datetime.datetime.now())
+    vf = Optional(datetime.datetime)
+    msg = Optional(datetime.datetime)
 
 
 class storage(object):
@@ -53,6 +54,7 @@ class storage(object):
             memberid = rf.memberid,
             article = rf.article,
             amount = rf.amount,
-            terminal_id = rf.terminal_id
+            terminal_id = rf.terminal_id,
+            date = rf.date
         )
         return db_item

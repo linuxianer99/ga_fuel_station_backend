@@ -51,7 +51,7 @@ class vereinsflieger(object):
         headers = {}
         params = {
             'accesstoken': self.accesstoken,
-            'bookingdate': datetime.today().strftime('%Y-%m-%d'),
+			'bookingdate': rf["date"],
             'articleid': rf["article"],
             'memberid': rf["memberid"],
             'amount': rf["amount"],
