@@ -2,7 +2,8 @@ import os
 import time
 #import json
 import logging
-from oneprint import EscPosPrint
+#from oneprint import EscPosPrint
+from escpos.printer import Dummy
 from jinja2 import Template
 from datetime import datetime
 import paho.mqtt.client as mqtt
@@ -66,10 +67,11 @@ class RemotePrinter(object):
                 amount=rf['amount'],
                 article=rf['article']
             )
-        # Create ESCPOS data
-        ep = EscPosPrint()
-        ep.auto_print(recipe_content)
-        return ep.get_data()
+        d = Dummy()
+        d.text("Hallo welt")
+        d.cut()
+        logging.info("DATA: %s", d.output)
+        return d.output
     
     def PrintJob(self, data):
         logging.info("Print Job on: %s", self.id)
@@ -78,7 +80,7 @@ class RemotePrinter(object):
         topic = "printer/" + self.id + "/job"
         print(topic)
         job = {'topic': topic, 'data': data}
-        client = mqtt.Client()
+        client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
         client.on_message = handlePrinter
         client.connect(os.environ.get('BROKER_HOST', 'localhost'), int(os.environ.get('BROKER_PORT', '1883')))
         result = client.publish(topic, data)
