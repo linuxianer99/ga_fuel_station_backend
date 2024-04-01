@@ -4,7 +4,8 @@ redis
 requests
 paho-mqtt
 qrcode 
-pillow
-pystrich
+#pillow
+Pillow
+#pystrich
 python-escpos
-oneprint
+#oneprint
