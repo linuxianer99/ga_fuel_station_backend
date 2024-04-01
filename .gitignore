@@ -3,3 +3,4 @@ dbdata
 config.json
 **/env.sh
 **/config.env
+*.bak
