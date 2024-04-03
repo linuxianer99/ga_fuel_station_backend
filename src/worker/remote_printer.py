@@ -2,8 +2,7 @@ import os
 import time
 #import json
 import logging
-#from oneprint import EscPosPrint
-from escpos.printer import Dummy
+from oneprint import EscPosPrint
 from jinja2 import Template
 from datetime import datetime
 import paho.mqtt.client as mqtt
@@ -56,27 +55,24 @@ class RemotePrinter(object):
     def CompileJob(self, rf):
         logging.info("Compile Job for printer: %s", self.id)
         # Generate Job metadata
-        # Topic: /printer/<printer_id>/job         => server send jobs to printer
+        # Topic: printer/<printer_id>/job         => server send jobs to printer
 
         # Compose recipe
         with open(self.recipe_template) as f:
             recipe_content = Template(f.read()).render(
-                date=datetime.today().strftime('%Y-%m-%d'),
-                time=datetime.today().strftime('%H:%M'),
+                date=rf["date"],
                 aircraft=rf['aircraft'],
                 amount=rf['amount'],
                 article=rf['article']
             )
-        d = Dummy()
-        d.text("Hallo welt")
-        d.cut()
-        logging.info("DATA: %s", d.output)
-        return d.output
+        ep = EscPosPrint()
+        ep.auto_print(recipe_content)        
+        return ep.get_data()
     
     def PrintJob(self, data):
         logging.info("Print Job on: %s", self.id)
         # Generate Job metadata
-        # Topic: /printer/<printer_id>/job         => server send jobs to printer
+        # Topic: printer/<printer_id>/job         => server send jobs to printer
         topic = "printer/" + self.id + "/job"
         print(topic)
         job = {'topic': topic, 'data': data}
