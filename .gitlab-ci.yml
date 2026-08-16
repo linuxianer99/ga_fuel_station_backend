@@ -1,48 +1,50 @@
-default:
-    image: docker:20.10.16
-    services:
-        - docker:20.10.16-dind
-    before_script:
-        - docker info
-variables:
-        IMAGE_TAG_TEST: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
-        IMAGE_TAG_RELEASE: $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
+# DEPRECATED: This file has been migrated to GitHub Actions
+# See: .github/workflows/docker-build.yml
+#
+# This GitLab CI configuration is no longer used.
+# The project now uses GitHub Actions for CI/CD.
 
-stages:
-  - build
-  - test
-  - release
-  
-build:
-    stage: build
-    parallel:
-        matrix:
-            - COMPONENT: [api, worker]
-    
-    before_script:
-        - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-    # Default branch leaves tag empty (= latest tag)
-    # All other branches are tagged with the escaped branch name (commit ref slug)
-    script:
-         - cd "$CI_PROJECT_DIR/src/$COMPONENT"
-         - docker build -t $CI_REGISTRY_IMAGE/$COMPONENT:$CI_COMMIT_SHORT_SHA .
-         - docker push $CI_REGISTRY_IMAGE/$COMPONENT:$CI_COMMIT_SHORT_SHA
-
-release-image:
-  stage: release
-  parallel:
-        matrix:
-            - COMPONENT: [api, worker]
-  before_script:
-        - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-    # Default branch leaves tag empty (= latest tag)
-    # All other branches are tagged with the escaped branch name (commit ref slug)
-
-  script:
-    - docker pull $CI_REGISTRY_IMAGE/$COMPONENT:$CI_COMMIT_SHORT_SHA
-    - docker tag $CI_REGISTRY_IMAGE/$COMPONENT:$CI_COMMIT_SHORT_SHA $CI_REGISTRY_IMAGE/$COMPONENT:$CI_COMMIT_TAG
-    - docker push $CI_REGISTRY_IMAGE/$COMPONENT:$CI_COMMIT_TAG
-    - docker tag $CI_REGISTRY_IMAGE/$COMPONENT:$CI_COMMIT_SHORT_SHA $CI_REGISTRY_IMAGE/$COMPONENT:latest
-    - docker push $CI_REGISTRY_IMAGE/$COMPONENT:latest
-  only:
-    - tags
+# Original GitLab CI configuration (archived):
+# default:
+#     image: docker:20.10.16
+#     services:
+#         - docker:20.10.16-dind
+#     before_script:
+#         - docker info
+# variables:
+#         IMAGE_TAG_TEST: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+#         IMAGE_TAG_RELEASE: $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
+#
+# stages:
+#   - build
+#   - test
+#   - release
+#   
+# build:
+#     stage: build
+#     parallel:
+#         matrix:
+#             - COMPONENT: [api, worker]
+#     
+#     before_script:
+#         - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+#     script:
+#          - cd "$CI_PROJECT_DIR/src/$COMPONENT"
+#          - docker build -t $CI_REGISTRY_IMAGE/$COMPONENT:$CI_COMMIT_SHORT_SHA .
+#          - docker push $CI_REGISTRY_IMAGE/$COMPONENT:$CI_COMMIT_SHORT_SHA
+#
+# release-image:
+#   stage: release
+#   parallel:
+#         matrix:
+#             - COMPONENT: [api, worker]
+#   before_script:
+#         - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+#   script:
+#     - docker pull $CI_REGISTRY_IMAGE/$COMPONENT:$CI_COMMIT_SHORT_SHA
+#     - docker tag $CI_REGISTRY_IMAGE/$COMPONENT:$CI_COMMIT_SHORT_SHA $CI_REGISTRY_IMAGE/$COMPONENT:$CI_COMMIT_TAG
+#     - docker push $CI_REGISTRY_IMAGE/$COMPONENT:$CI_COMMIT_TAG
+#     - docker tag $CI_REGISTRY_IMAGE/$COMPONENT:$CI_COMMIT_SHORT_SHA $CI_REGISTRY_IMAGE/$COMPONENT:latest
+#     - docker push $CI_REGISTRY_IMAGE/$COMPONENT:latest
+#   only:
+#     - tags
