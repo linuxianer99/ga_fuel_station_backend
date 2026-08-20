@@ -90,5 +90,5 @@ jobs:
           docker tag $REGISTRY_IMAGE:sha-$SHORT_SHA $REGISTRY_IMAGE:${{ github.ref_name }}
           docker push $REGISTRY_IMAGE:${{ github.ref_name }}
           
-          docker tag $REGISTRY_IMAGE:$SHORT_SHA $REGISTRY_IMAGE:latest
+          docker tag $REGISTRY_IMAGE:sha-$SHORT_SHA $REGISTRY_IMAGE:latest
           docker push $REGISTRY_IMAGE:latest
