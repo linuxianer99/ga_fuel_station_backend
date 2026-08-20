@@ -86,8 +86,8 @@ jobs:
           SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
           REGISTRY_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.component }}"
           
-          docker pull $REGISTRY_IMAGE:$SHORT_SHA
-          docker tag $REGISTRY_IMAGE:$SHORT_SHA $REGISTRY_IMAGE:${{ github.ref_name }}
+          docker pull $REGISTRY_IMAGE:sha-$SHORT_SHA
+          docker tag $REGISTRY_IMAGE:sha-$SHORT_SHA $REGISTRY_IMAGE:${{ github.ref_name }}
           docker push $REGISTRY_IMAGE:${{ github.ref_name }}
           
           docker tag $REGISTRY_IMAGE:$SHORT_SHA $REGISTRY_IMAGE:latest
