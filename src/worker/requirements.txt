@@ -2,7 +2,6 @@ celery==4.4.7  # due to bug https://github.com/mher/flower/issues/1029
 Flask==3.0.2
 redis==5.0.3
 requests==2.31.0
-paho-mqtt==2.0.0
 #qrcode
 #pillow
 #Pillow
