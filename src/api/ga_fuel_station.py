@@ -1,16 +1,17 @@
-from flask import g, Flask, request, render_template, Response
+from flask import g, Flask, request, render_template, Response, jsonify
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
 #from flask_restful import Resource, reqparse
 import time
 #from datetime import datetime
 import logging
 import os
+import math
 #import json
 #import ssl
 import hashlib
 import hmac
 import base64
-from Refueling import Refueling
+from Refueling import Refueling, parse_refueling_date
 
 from prometheus_client import multiprocess, make_wsgi_app
 from prometheus_client import generate_latest, CollectorRegistry, CONTENT_TYPE_LATEST, Gauge, Info, Counter, Enum
@@ -43,6 +44,74 @@ logging.basicConfig(
     level=logging.DEBUG,
     datefmt='%Y-%m-%d %H:%M:%S')
 
+
+def _is_finite_number(value):
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return False
+    try:
+        return math.isfinite(float(value))
+    except (OverflowError, ValueError):
+        return False
+
+
+def _validate_status_payload(data):
+    if not isinstance(data, dict):
+        return ['JSON body must be an object']
+
+    errors = []
+    for field in ('freeheap', 'status'):
+        if field not in data:
+            errors.append('{} is required'.format(field))
+        elif not _is_finite_number(data[field]):
+            errors.append('{} must be a finite number'.format(field))
+
+    ip_address = data.get('ip')
+    if not isinstance(ip_address, str) or not ip_address.strip() or len(ip_address) > 255:
+        errors.append('ip must be a non-empty string of at most 255 characters')
+
+    for field in ('reboot_reason', 'rssi'):
+        if field in data and not _is_finite_number(data[field]):
+            errors.append('{} must be a finite number'.format(field))
+
+    if 'freeheap' in data and _is_finite_number(data['freeheap']) and data['freeheap'] < 0:
+        errors.append('freeheap must not be negative')
+    return errors
+
+
+def _validate_refueling_payload(data):
+    if not isinstance(data, dict):
+        return ['JSON body must be an object']
+
+    errors = []
+    for field in ('aircraft', 'memberid', 'article', 'date', 'auth'):
+        value = data.get(field)
+        if not isinstance(value, str) or not value.strip():
+            errors.append('{} must be a non-empty string'.format(field))
+        elif len(value) > 128:
+            errors.append('{} must be at most 128 characters'.format(field))
+
+    amount = data.get('amount')
+    if not _is_finite_number(amount) or amount <= 0:
+        errors.append('amount must be a finite number greater than 0')
+
+    if 'totalizer' in data:
+        totalizer = data['totalizer']
+        if not _is_finite_number(totalizer) or totalizer < 0:
+            errors.append('totalizer must be a finite non-negative number')
+
+    date_value = data.get('date')
+    if isinstance(date_value, str):
+        try:
+            parse_refueling_date(date_value)
+        except ValueError:
+            errors.append('date must use DD.MM.YYYY or ISO 8601 format')
+
+    return errors
+
+
+def _invalid_request(errors):
+    return jsonify({'error': 'Invalid request body', 'details': errors}), 400
+
 @app.route('/terminal/<terminal_id>/ping', methods=['GET'])
 def terminal_ping(terminal_id):
     logging.info("Ping from %s", terminal_id)
@@ -65,7 +134,10 @@ def terminal_ping(terminal_id):
 @app.route('/terminal/<terminal_id>/status', methods=['POST'])
 def terminal_status(terminal_id):
     logging.info("Status from %s", terminal_id)
-    data = request.get_json()
+    data = request.get_json(silent=True)
+    errors = _validate_status_payload(data)
+    if errors:
+        return _invalid_request(errors)
     logging.info(data)
     
     lm = {}
@@ -102,7 +174,10 @@ def terminal_status(terminal_id):
 
 @app.route('/terminal/<terminal_id>', methods=['POST'])
 def terminal_refueling(terminal_id):
-    data = request.get_json()
+    data = request.get_json(silent=True)
+    errors = _validate_refueling_payload(data)
+    if errors:
+        return _invalid_request(errors)
     logging.debug(data)
     if verify_data(data):
         rf = Refueling(data)
@@ -144,7 +219,7 @@ def verify_data(data):
     hmac_value = hmac.new(secret_key, message.encode("utf-8"), hashlib.sha256)
     digest = hmac_value.digest()
     calculated_hash = base64.b64encode(digest).decode()
-    if (calculated_hash.strip()==data['auth']):
+    if hmac.compare_digest(calculated_hash.strip(), data['auth']):
         logging.info("API auth OK")
         return True
     else:

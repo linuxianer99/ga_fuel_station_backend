@@ -14,6 +14,16 @@ logging.basicConfig(level=logging.DEBUG)
 date_format = '%d.%m.%Y'
 
 
+def parse_refueling_date(value):
+    if not isinstance(value, str):
+        raise ValueError('date must be a string')
+    try:
+        return datetime.datetime.strptime(value, date_format).date()
+    except ValueError:
+        iso_value = value[:-1] + '+00:00' if value.endswith('Z') else value
+        return datetime.datetime.fromisoformat(iso_value).date()
+
+
 db = storage()
 
 class Refueling(object):
@@ -29,11 +39,11 @@ class Refueling(object):
         
         self.aircraft = args['aircraft']
         self.article = args['article']
-        self.amount = args['amount']
+        self.amount = float(args['amount'])
         self.memberid = args['memberid']
-        self.date = datetime.datetime.strptime(args['date'], date_format)
+        self.date = parse_refueling_date(args['date'])
         if 'totalizer' in args:
-            self.totalizer = args['totalizer']
+            self.totalizer = float(args['totalizer'])
 
     def set_terminal_id(self, terminal_id):
         self.terminal_id = terminal_id
