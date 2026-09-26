@@ -6,8 +6,6 @@ import logging
 import smtplib, ssl
 from jinja2 import Template
 from datetime import datetime
-import paho.mqtt.client as mqtt
-
 from celery import Celery
 from celery.utils.log import get_task_logger
 from celery import app
@@ -16,7 +14,6 @@ from celery.signals import task_failure
 from vf_interface import vereinsflieger
 from telegram_bot import TelegramBOT
 from remote_printer import RemotePrinter
-from remote_printer import handlePrinter
 
 logging.basicConfig(
     format='%(asctime)s %(levelname)-8s %(message)s',
@@ -54,8 +51,14 @@ Printers = []
 # Parse config for printers
 for key, value in os.environ.items():
     if key.startswith("PRINTER_NAME_"):
-        logger.info('[RemotePrinter] add: ' + value)
-        Printers.append(RemotePrinter(value, value + '.j2'))
+        printer_suffix = key[len("PRINTER_NAME_"):]
+        printer_ip = os.environ.get("PRINTER_IP_" + printer_suffix)
+        if not printer_ip:
+            logger.warning('[RemotePrinter] skipping %s: PRINTER_IP_%s is not configured', value, printer_suffix)
+            continue
+        printer_port = os.environ.get("PRINTER_PORT_" + printer_suffix, "9100")
+        logger.info('[RemotePrinter] add %s at %s:%s', value, printer_ip, printer_port)
+        Printers.append(RemotePrinter(value, printer_ip, value + '.j2', printer_port))
 
 # Setup Celery
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379')
